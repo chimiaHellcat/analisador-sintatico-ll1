@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analisador Sintático Preditivo LL(1)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 500;
+      color: #a78bfa;
+      margin-bottom: 2rem;
+      letter-spacing: 1px;
+    }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 500;
+      color: #7c3aed;
+      margin-bottom: 0.75rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .section { margin-bottom: 2.5rem; }
+
+    /* ===== FORMULÁRIO DA GRAMÁTICA ===== */
+    .gram-card {
+      background: #16213e;
+      border: 1px solid #2d1f5e;
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+
+    .gram-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .gram-row label {
+      font-size: 12px;
+      color: #a78bfa;
+      min-width: 120px;
+    }
+
+    .gram-row input {
+      background: #0f0f23;
+      border: 1px solid #3d2b7a;
+      color: #e0e0e0;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      flex: 1;
+      min-width: 180px;
+      outline: none;
+    }
+
+    .gram-row input:focus { border-color: #7c3aed; }
+
+    .gram-hint {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+
+    .prod-list { margin-bottom: 12px; }
+
+    .prod-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .prod-item input {
+      background: #0f0f23;
+      border: 1px solid #3d2b7a;
+      color: #e0e0e0;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .prod-item input.inp-nt { width: 60px; text-align: center; color: #a78bfa; }
+    .prod-item input.inp-prod { flex: 1; }
+    .prod-item span { color: #6b7280; font-size: 14px; }
+
+    .btn { 
+      border: none; padding: 7px 14px; border-radius: 6px;
+      cursor: pointer; font-size: 12px; font-family: 'Courier New', monospace;
+    }
+    .btn-add    { background: #1e3a2f; color: #34d399; border: 1px solid #065f46; }
+    .btn-remove { background: #2b0d0d; color: #f87171; border: 1px solid #7f1d1d; }
+    .btn-add:hover    { background: #065f46; }
+    .btn-remove:hover { background: #7f1d1d; }
+
+    .btn-primary {
+      background: #5b21b6; color: #e0e0e0; border: none;
+      padding: 9px 20px; border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-family: 'Courier New', monospace;
+      width: 100%; margin-top: 8px;
+    }
+    .btn-primary:hover { background: #7c3aed; }
+
+    /* ===== TABELAS ===== */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    th {
+      background: #2d1f5e; color: #a78bfa;
+      padding: 8px 12px; text-align: center;
+      border: 1px solid #3d2b7a; font-weight: 500;
+    }
+
+    td {
+      padding: 7px 12px; text-align: center;
+      border: 1px solid #2a2a4a; color: #c4b5fd;
+    }
+
+    td.nt {
+      color: #a78bfa; font-weight: 500;
+      background: #1e1e3a; text-align: left;
+    }
+
+    td.prod { color: #34d399; }
+    td.eps  { color: #6b7280; font-style: italic; }
+    tr:hover td { background: #252545; }
+
+    /* ===== FIRST E FOLLOW ===== */
+    .ff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .ff-card {
+      background: #16213e; border: 1px solid #2d1f5e;
+      border-radius: 8px; padding: 1rem;
+    }
+
+    .ff-card h3 {
+      font-size: 13px; color: #7c3aed;
+      margin-bottom: 0.75rem; font-weight: 500;
+    }
+
+    .ff-row {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 5px 0;
+      border-bottom: 1px solid #1e1e3a; font-size: 13px;
+    }
+
+    .ff-row:last-child { border-bottom: none; }
+    .ff-nt  { color: #a78bfa; font-weight: 500; }
+    .ff-set { color: #34d399; font-size: 12px; }
+
+    /* ===== ANÁLISE ===== */
+    .input-row {
+      display: flex; gap: 8px;
+      align-items: center; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+
+    .input-row input {
+      background: #16213e; border: 1px solid #3d2b7a;
+      color: #e0e0e0; padding: 8px 12px; border-radius: 6px;
+      font-family: 'Courier New', monospace; font-size: 13px;
+      flex: 1; min-width: 200px; outline: none;
+    }
+
+    .input-row input:focus { border-color: #7c3aed; }
+
+    .input-row button {
+      background: #5b21b6; color: #e0e0e0; border: none;
+      padding: 8px 18px; border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-family: 'Courier New', monospace;
+    }
+
+    .input-row button:hover { background: #7c3aed; }
+
+    .log {
+      background: #0f0f23; border: 1px solid #2d1f5e;
+      border-radius: 8px; overflow: hidden;
+    }
+
+    .log table  { font-size: 12px; }
+    .log th     { font-size: 12px; padding: 6px 10px; text-align: left; }
+    .log td     { padding: 5px 10px; font-size: 12px; text-align: left; }
+
+    tr.aceito td { color: #34d399; background: #0d2b1f; }
+    tr.erro   td { color: #f87171; background: #2b0d0d; }
+    tr.le     td { color: #60a5fa; }
+    tr.expand td { color: #c4b5fd; }
+    tr.eps    td { color: #6b7280; font-style: italic; }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 4px; font-size: 12px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .badge-ok  { background: #0d2b1f; color: #34d399; border: 1px solid #065f46; }
+    .badge-err { background: #2b0d0d; color: #f87171; border: 1px solid #7f1d1d; }
+
+    .status-row {
+      display: flex; align-items: center;
+      gap: 10px; margin-bottom: 8px;
+    }
+
+    .passos { font-size: 12px; color: #6b7280; }
+
+    .erro-conexao {
+      color: #f87171; font-size: 13px; padding: 10px;
+      background: #2b0d0d; border: 1px solid #7f1d1d; border-radius: 6px;
+    }
+
+    .hidden { display: none; }
+
+    .divider {
+      border: none; border-top: 1px solid #2d1f5e; margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⊢ Analisador Sintático Preditivo LL(1)</h1>
+
+  <!-- ===== FORMULÁRIO DA GRAMÁTICA ===== -->
+  <div class="section">
+    <h2>Definir Gramática</h2>
+    <div class="gram-card">
+
+      <div class="gram-row">
+        <label>Símbolo Inicial:</label>
+        <input type="text" id="simboloInicial" value="S" maxlength="5" style="width:80px;flex:none;" />
+      </div>
+      <p class="gram-hint">Use letras maiúsculas para não-terminais (S, A, B...) e minúsculas para terminais (id, v, e...).<br>Use "3" para representar ε (epsilon).</p>
+
+   <h2 style="margin-bottom:8px;">Gramática</h2>
+
+<textarea
+    id="gramatica"
+    style="
+        width:100%;
+        min-height:220px;
+        background:#0f0f23;
+        color:#e0e0e0;
+        border:1px solid #3d2b7a;
+        border-radius:6px;
+        padding:12px;
+        font-family:'Courier New', monospace;
+        font-size:14px;
+        resize:vertical;
+    "
+>S -> BA
+A -> vBA | 3
+B -> DC
+C -> eDC | 3
+D -> cD | id
+</textarea>
+
+<button class="btn-primary" onclick="processar()">
+    Processar Gramática e Analisar
+</button>
+    </div>
+  </div>
+
+  <!-- ===== SENTENÇA ===== -->
+  <div class="section">
+    <h2>Sentença para Analisar</h2>
+    <div class="input-row">
+      <input type="text" id="sentenca" placeholder="ex: id e id" value="id e id" />
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ===== FIRST E FOLLOW ===== -->
+  <div class="section hidden" id="secFF">
+    <h2>Conjuntos First e Follow</h2>
+    <div class="ff-grid">
+      <div class="ff-card">
+        <h3>First</h3>
+        <div id="firstContent"></div>
+      </div>
+      <div class="ff-card">
+        <h3>Follow</h3>
+        <div id="followContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TABELA DE PARSING ===== -->
+  <div class="section hidden" id="secTabela">
+    <h2>Tabela de Parsing</h2>
+    <div id="tabelaContent"></div>
+  </div>
+
+  <!-- ===== ANÁLISE PREDITIVA ===== -->
+  <div class="section hidden" id="secAnalise">
+    <h2>Análise Preditiva</h2>
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    
+
+
+
+
+
+    async function processar() {
+const producoes = {};
+
+const textoGramatica =
+    document.getElementById("gramatica").value;
+
+const linhas = textoGramatica
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+for (const linha of linhas) {
+
+    const partes = linha.split("->");
+
+    if (partes.length !== 2) {
+        alert("Linha inválida: " + linha);
+        return;
+    }
+
+    const naoTerminal = partes[0].trim();
+
+    const alternativas = partes[1]
+        .split("|")
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+
+    producoes[naoTerminal] = alternativas;
+}
+      const simboloInicial = document.getElementById("simboloInicial").value.trim();
+      const sentenca       = document.getElementById("sentenca").value.trim();
+
+      if (!simboloInicial || Object.keys(producoes).length === 0) {
+        alert("Preencha o símbolo inicial e pelo menos uma produção!");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:8080/api/processar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ simboloInicial, producoes, sentenca })
+        });
+
+        if (!response.ok) throw new Error("Erro no servidor");
+
+        const data = await response.json();
+        renderFF(data.first, data.follow);
+        renderTabela(data.tabela, data.naoTerminais, data.terminais);
+        renderAnalise(data.passos);
+
+      } catch (error) {
+        document.getElementById("resultado").innerHTML =
+          '<p class="erro-conexao">Erro ao conectar com o servidor. O Spring Boot está rodando em localhost:8080?</p>';
+        document.getElementById("secAnalise").classList.remove("hidden");
+      }
+    }
+
+    function renderFF(first, follow) {
+      const nts = Object.keys(first);
+
+      let firstHtml = "";
+      let followHtml = "";
+
+      nts.forEach(nt => {
+        firstHtml  += `<div class="ff-row">
+                         <span class="ff-nt">${nt}</span>
+                         <span class="ff-set">{ ${first[nt].join(", ")} }</span>
+                       </div>`;
+        followHtml += `<div class="ff-row">
+                         <span class="ff-nt">${nt}</span>
+                         <span class="ff-set">{ ${follow[nt].join(", ")} }</span>
+                       </div>`;
+      });
+
+      document.getElementById("firstContent").innerHTML  = firstHtml;
+      document.getElementById("followContent").innerHTML = followHtml;
+      document.getElementById("secFF").classList.remove("hidden");
+    }
+
+    function renderTabela(tabela, naoTerminais, terminais) {
+      let html = "<table><thead><tr><th></th>";
+      terminais.forEach(t => html += `<th>${t}</th>`);
+      html += "</tr></thead><tbody>";
+
+      naoTerminais.forEach(nt => {
+        html += `<tr><td class="nt">${nt}</td>`;
+        terminais.forEach(t => {
+          const val = tabela[nt] ? tabela[nt][t] : "";
+          if (!val) {
+            html += `<td></td>`;
+          } else if (val === "3") {
+            html += `<td class="eps">ε</td>`;
+          } else {
+            html += `<td class="prod">${val}</td>`;
+          }
+        });
+        html += "</tr>";
+      });
+
+      html += "</tbody></table>";
+      document.getElementById("tabelaContent").innerHTML = html;
+      document.getElementById("secTabela").classList.remove("hidden");
+    }
+
+    function renderAnalise(passos) {
+      if (!passos || passos.length === 0) return;
+
+      const ultimo = passos[passos.length - 1];
+      const status = ultimo ? ultimo.tipo : "erro";
+
+      const badge = status === "aceito"
+        ? '<span class="badge badge-ok">✓ Aceito</span>'
+        : '<span class="badge badge-err">✗ Erro</span>';
+
+      let html = '<div class="status-row">';
+      html += badge;
+      html += `<span class="passos">${passos.length} passos</span>`;
+      html += '</div>';
+      html += '<div class="log"><table>';
+      html += '<thead><tr><th>Pilha</th><th>Entrada</th><th>Ação</th></tr></thead><tbody>';
+
+      passos.forEach(p => {
+        html += `<tr class="${p.tipo}">
+                   <td>${p.pilha}</td>
+                   <td>${p.entrada}</td>
+                   <td>${p.acao}</td>
+                 </tr>`;
+      });
+
+      html += '</tbody></table></div>';
+      document.getElementById("resultado").innerHTML = html;
+      document.getElementById("secAnalise").classList.remove("hidden");
+    }
+
+    // Enter na sentença dispara o processar
+    document.getElementById("sentenca").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") processar();
+    });
+
+    
+  </script>
+
+</body>
+</html>
