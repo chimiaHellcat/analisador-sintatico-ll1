@@ -1,0 +1,14 @@
+Analisador Sintatico LL(1)
+
+Requisito:
+- Java 21 ou superior instalado.
+
+Como executar:
+1. Abra a pasta entrega-professor.
+2. De dois cliques em executar.bat.
+3. Acesse no navegador:
+   http://localhost:8080/analisador_sintatico.html
+
+Observacao:
+- Mantenha executar.bat e analisador-sintatico-ll1.jar na mesma pasta.
+- Para encerrar o programa, feche a janela do terminal.

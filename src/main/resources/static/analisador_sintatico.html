@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analisador Sintático Preditivo LL(1)</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: 'Courier New', monospace;
@@ -32,7 +37,9 @@
       text-transform: uppercase;
     }
 
-    .section { margin-bottom: 2.5rem; }
+    .section {
+      margin-bottom: 2.5rem;
+    }
 
     /* ===== FORMULÁRIO DA GRAMÁTICA ===== */
     .gram-card {
@@ -69,7 +76,9 @@
       outline: none;
     }
 
-    .gram-row input:focus { border-color: #7c3aed; }
+    .gram-row input:focus {
+      border-color: #7c3aed;
+    }
 
     .gram-hint {
       font-size: 11px;
@@ -78,7 +87,9 @@
       margin-bottom: 12px;
     }
 
-    .prod-list { margin-bottom: 12px; }
+    .prod-list {
+      margin-bottom: 12px;
+    }
 
     .prod-item {
       display: flex;
@@ -98,139 +109,325 @@
       outline: none;
     }
 
-    .prod-item input.inp-nt { width: 60px; text-align: center; color: #a78bfa; }
-    .prod-item input.inp-prod { flex: 1; }
-    .prod-item span { color: #6b7280; font-size: 14px; }
-
-    .btn { 
-      border: none; padding: 7px 14px; border-radius: 6px;
-      cursor: pointer; font-size: 12px; font-family: 'Courier New', monospace;
-    }
-    .btn-add    { background: #1e3a2f; color: #34d399; border: 1px solid #065f46; }
-    .btn-remove { background: #2b0d0d; color: #f87171; border: 1px solid #7f1d1d; }
-    .btn-add:hover    { background: #065f46; }
-    .btn-remove:hover { background: #7f1d1d; }
-
-    .btn-primary {
-      background: #5b21b6; color: #e0e0e0; border: none;
-      padding: 9px 20px; border-radius: 6px; cursor: pointer;
-      font-size: 13px; font-family: 'Courier New', monospace;
-      width: 100%; margin-top: 8px;
-    }
-    .btn-primary:hover { background: #7c3aed; }
-
-    /* ===== TABELAS ===== */
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-
-    th {
-      background: #2d1f5e; color: #a78bfa;
-      padding: 8px 12px; text-align: center;
-      border: 1px solid #3d2b7a; font-weight: 500;
+    .prod-item input.inp-nt {
+      width: 60px;
+      text-align: center;
+      color: #a78bfa;
     }
 
-    td {
-      padding: 7px 12px; text-align: center;
-      border: 1px solid #2a2a4a; color: #c4b5fd;
+    .prod-item input.inp-prod {
+      flex: 1;
     }
 
-    td.nt {
-      color: #a78bfa; font-weight: 500;
-      background: #1e1e3a; text-align: left;
+    .prod-item span {
+      color: #6b7280;
+      font-size: 14px;
     }
 
-    td.prod { color: #34d399; }
-    td.eps  { color: #6b7280; font-style: italic; }
-    tr:hover td { background: #252545; }
-
-    /* ===== FIRST E FOLLOW ===== */
-    .ff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
-    .ff-card {
-      background: #16213e; border: 1px solid #2d1f5e;
-      border-radius: 8px; padding: 1rem;
-    }
-
-    .ff-card h3 {
-      font-size: 13px; color: #7c3aed;
-      margin-bottom: 0.75rem; font-weight: 500;
-    }
-
-    .ff-row {
-      display: flex; justify-content: space-between;
-      align-items: center; padding: 5px 0;
-      border-bottom: 1px solid #1e1e3a; font-size: 13px;
-    }
-
-    .ff-row:last-child { border-bottom: none; }
-    .ff-nt  { color: #a78bfa; font-weight: 500; }
-    .ff-set { color: #34d399; font-size: 12px; }
-
-    /* ===== ANÁLISE ===== */
-    .input-row {
-      display: flex; gap: 8px;
-      align-items: center; margin-bottom: 1rem; flex-wrap: wrap;
-    }
-
-    .input-row input {
-      background: #16213e; border: 1px solid #3d2b7a;
-      color: #e0e0e0; padding: 8px 12px; border-radius: 6px;
-      font-family: 'Courier New', monospace; font-size: 13px;
-      flex: 1; min-width: 200px; outline: none;
-    }
-
-    .input-row input:focus { border-color: #7c3aed; }
-
-    .input-row button {
-      background: #5b21b6; color: #e0e0e0; border: none;
-      padding: 8px 18px; border-radius: 6px; cursor: pointer;
-      font-size: 13px; font-family: 'Courier New', monospace;
-    }
-
-    .input-row button:hover { background: #7c3aed; }
-
-    .log {
-      background: #0f0f23; border: 1px solid #2d1f5e;
-      border-radius: 8px; overflow: hidden;
-    }
-
-    .log table  { font-size: 12px; }
-    .log th     { font-size: 12px; padding: 6px 10px; text-align: left; }
-    .log td     { padding: 5px 10px; font-size: 12px; text-align: left; }
-
-    tr.aceito td { color: #34d399; background: #0d2b1f; }
-    tr.erro   td { color: #f87171; background: #2b0d0d; }
-    tr.le     td { color: #60a5fa; }
-    tr.expand td { color: #c4b5fd; }
-    tr.eps    td { color: #6b7280; font-style: italic; }
-
-    .badge {
-      display: inline-block; padding: 3px 10px;
-      border-radius: 4px; font-size: 12px;
+    .btn {
+      border: none;
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
       font-family: 'Courier New', monospace;
     }
 
-    .badge-ok  { background: #0d2b1f; color: #34d399; border: 1px solid #065f46; }
-    .badge-err { background: #2b0d0d; color: #f87171; border: 1px solid #7f1d1d; }
+    .btn-add {
+      background: #1e3a2f;
+      color: #34d399;
+      border: 1px solid #065f46;
+    }
+
+    .btn-remove {
+      background: #2b0d0d;
+      color: #f87171;
+      border: 1px solid #7f1d1d;
+    }
+
+    .btn-add:hover {
+      background: #065f46;
+    }
+
+    .btn-remove:hover {
+      background: #7f1d1d;
+    }
+
+    .btn-primary {
+      background: #5b21b6;
+      color: #e0e0e0;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .btn-primary:hover {
+      background: #7c3aed;
+    }
+
+    .btn-secondary {
+      background: #0f2f3a;
+      color: #67e8f9;
+      border: 1px solid #155e75;
+      padding: 9px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .btn-secondary:hover {
+      background: #155e75;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ===== TABELAS ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: #2d1f5e;
+      color: #a78bfa;
+      padding: 8px 12px;
+      text-align: center;
+      border: 1px solid #3d2b7a;
+      font-weight: 500;
+    }
+
+    td {
+      padding: 7px 12px;
+      text-align: center;
+      border: 1px solid #2a2a4a;
+      color: #c4b5fd;
+    }
+
+    td.nt {
+      color: #a78bfa;
+      font-weight: 500;
+      background: #1e1e3a;
+      text-align: left;
+    }
+
+    td.prod {
+      color: #34d399;
+    }
+
+    td.eps {
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    tr:hover td {
+      background: #252545;
+    }
+
+    /* ===== FIRST E FOLLOW ===== */
+    .ff-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .ff-card {
+      background: #16213e;
+      border: 1px solid #2d1f5e;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .ff-card h3 {
+      font-size: 13px;
+      color: #7c3aed;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+
+    .ff-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid #1e1e3a;
+      font-size: 13px;
+    }
+
+    .ff-row:last-child {
+      border-bottom: none;
+    }
+
+    .ff-nt {
+      color: #a78bfa;
+      font-weight: 500;
+    }
+
+    .ff-set {
+      color: #34d399;
+      font-size: 12px;
+    }
+
+    /* ===== ANÁLISE ===== */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .input-row input {
+      background: #16213e;
+      border: 1px solid #3d2b7a;
+      color: #e0e0e0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      flex: 1;
+      min-width: 200px;
+      outline: none;
+    }
+
+    .input-row input:focus {
+      border-color: #7c3aed;
+    }
+
+    .input-row button {
+      background: #5b21b6;
+      color: #e0e0e0;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .input-row button:hover {
+      background: #7c3aed;
+    }
+
+    .log {
+      background: #0f0f23;
+      border: 1px solid #2d1f5e;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .log table {
+      font-size: 12px;
+    }
+
+    .log th {
+      font-size: 12px;
+      padding: 6px 10px;
+      text-align: left;
+    }
+
+    .log td {
+      padding: 5px 10px;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    tr.aceito td {
+      color: #34d399;
+      background: #0d2b1f;
+    }
+
+    tr.erro td {
+      color: #f87171;
+      background: #2b0d0d;
+    }
+
+    tr.le td {
+      color: #60a5fa;
+    }
+
+    tr.expand td {
+      color: #c4b5fd;
+    }
+
+    tr.eps td {
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .badge-ok {
+      background: #0d2b1f;
+      color: #34d399;
+      border: 1px solid #065f46;
+    }
+
+    .badge-err {
+      background: #2b0d0d;
+      color: #f87171;
+      border: 1px solid #7f1d1d;
+    }
 
     .status-row {
-      display: flex; align-items: center;
-      gap: 10px; margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
     }
 
-    .passos { font-size: 12px; color: #6b7280; }
+    .passos {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .result-message {
+      flex-basis: 100%;
+      font-size: 13px;
+      color: #e0e0e0;
+    }
 
     .erro-conexao {
-      color: #f87171; font-size: 13px; padding: 10px;
-      background: #2b0d0d; border: 1px solid #7f1d1d; border-radius: 6px;
+      color: #f87171;
+      font-size: 13px;
+      padding: 10px;
+      background: #2b0d0d;
+      border: 1px solid #7f1d1d;
+      border-radius: 6px;
     }
 
-    .hidden { display: none; }
+    .hidden {
+      display: none;
+    }
 
     .divider {
-      border: none; border-top: 1px solid #2d1f5e; margin: 2rem 0;
+      border: none;
+      border-top: 1px solid #2d1f5e;
+      margin: 2rem 0;
     }
   </style>
 </head>
+
 <body>
 
   <h1>⊢ Analisador Sintático Preditivo LL(1)</h1>
@@ -244,13 +441,12 @@
         <label>Símbolo Inicial:</label>
         <input type="text" id="simboloInicial" value="S" maxlength="5" style="width:80px;flex:none;" />
       </div>
-      <p class="gram-hint">Use letras maiúsculas para não-terminais (S, A, B...) e minúsculas para terminais (id, v, e...).<br>Use "3" para representar ε (epsilon).</p>
+      <p class="gram-hint">Use letras maiúsculas para não-terminais (S, A, B...) e minúsculas para terminais (id, v,
+        e...).<br>Use "3" para representar ε (epsilon).</p>
 
-   <h2 style="margin-bottom:8px;">Gramática</h2>
+      <h2 style="margin-bottom:8px;">Gramática</h2>
 
-<textarea
-    id="gramatica"
-    style="
+      <textarea id="gramatica" style="
         width:100%;
         min-height:220px;
         background:#0f0f23;
@@ -261,17 +457,23 @@
         font-family:'Courier New', monospace;
         font-size:14px;
         resize:vertical;
-    "
->S -> BA
-A -> vBA | 3
-B -> DC
-C -> eDC | 3
-D -> cD | id
+    ">S -> dA | cA
+A -> aB | c
+B -> dA | cC | 3
+C -> bS | aC | c
 </textarea>
 
-<button class="btn-primary" onclick="processar()">
-    Processar Gramática e Analisar
-</button>
+      <div class="button-row">
+        <button class="btn-secondary" onclick="gerarGramaticaAleatoria()">
+          Gerar Gramatica Aleatoria
+        </button>
+        <button class="btn-secondary" onclick="gerarSentencaValida()">
+          Gerar Sentenca Valida
+        </button>
+        <button class="btn-primary" onclick="processar()">
+          Processar Gramática e Analisar
+        </button>
+      </div>
     </div>
   </div>
 
@@ -279,7 +481,9 @@ D -> cD | id
   <div class="section">
     <h2>Sentença para Analisar</h2>
     <div class="input-row">
-      <input type="text" id="sentenca" placeholder="ex: id e id" value="id e id" />
+      <input type="text" id="sentenca" placeholder="ex: dadacbcacbcacac" value="dadacbcacbcacac" />
+      <button onclick="gerarSentencaValida()">Gerar</button>
+      <button onclick="reiniciarCiclo()">Reiniciar</button>
     </div>
   </div>
 
@@ -313,43 +517,185 @@ D -> cD | id
   </div>
 
   <script>
-    
+    const gramaticasAleatorias = [
+      {
+        inicial: "S",
+        gramatica: "S -> dA | cA\nA -> aB | c\nB -> dA | cC | 3\nC -> bS | aC | c",
+        sentenca: "dadacbcacbcacac"
+      },
+      {
+        inicial: "E",
+        gramatica: "E -> TX\nX -> +TX | 3\nT -> FY\nY -> *FY | 3\nF -> (E) | id",
+        sentenca: "id+id*id"
+      },
+      {
+        inicial: "S",
+        gramatica: "S -> IA | WA\nI -> iE | sE\nW -> wE | rE\nA -> cS | 3\nE -> id | n",
+        sentenca: "iidcwid"
+      },
+      {
+        inicial: "S",
+        gramatica: "S -> LB | R\nL -> aL | b\nB -> cS | 3\nR -> dA | eA\nA -> fA | g",
+        sentenca: "abcdfg"
+      },
+      {
+        inicial: "S",
+        gramatica: "S -> MA | NB\nM -> pM | q\nN -> rN | s\nA -> tS | 3\nB -> uA | vA",
+        sentenca: "qqtst"
+      }
+    ];
+
+    function parsearGramaticaTela() {
+      const producoes = {};
+      const linhas = document.getElementById("gramatica").value
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+
+      for (const linha of linhas) {
+        const partes = linha.split("->");
+        if (partes.length !== 2) {
+          alert("Linha invalida: " + linha);
+          return null;
+        }
+
+        const naoTerminal = partes[0].trim();
+        const alternativas = partes[1]
+          .split("|")
+          .map(p => p.trim().replace(/\s+/g, ""))
+          .filter(p => p.length > 0);
+
+        producoes[naoTerminal] = alternativas;
+      }
+
+      return {
+        simboloInicial: document.getElementById("simboloInicial").value.trim(),
+        producoes
+      };
+    }
+
+    function quebrarProducao(producao) {
+      if (producao === "3") return [];
+
+      const simbolos = [];
+      let i = 0;
+      while (i < producao.length) {
+        if (producao.startsWith("id", i)) {
+          simbolos.push("id");
+          i += 2;
+        } else {
+          simbolos.push(producao.charAt(i));
+          i++;
+        }
+      }
+      return simbolos;
+    }
+
+    function escolherProducao(alternativas, producoes, forcarFim) {
+      let candidatas = alternativas;
+      if (forcarFim) {
+        const terminais = alternativas.filter(prod =>
+          quebrarProducao(prod).every(s => !producoes[s])
+        );
+        if (terminais.length > 0) candidatas = terminais;
+      }
+
+      return candidatas[Math.floor(Math.random() * candidatas.length)];
+    }
+
+    function gerarSentencaValida() {
+      const dados = parsearGramaticaTela();
+      if (!dados || !dados.simboloInicial || Object.keys(dados.producoes).length === 0) {
+        alert("Preencha o simbolo inicial e a gramatica antes de gerar a sentenca.");
+        return;
+      }
+
+      for (let tentativa = 0; tentativa < 30; tentativa++) {
+        let simbolos = [dados.simboloInicial];
+
+        for (let passo = 0; passo < 80; passo++) {
+          const pos = simbolos.findIndex(s => dados.producoes[s]);
+          if (pos === -1) {
+            document.getElementById("sentenca").value = simbolos.join("");
+            reiniciarSaidas();
+            return;
+          }
+
+          const nt = simbolos[pos];
+          const producao = escolherProducao(
+            dados.producoes[nt],
+            dados.producoes,
+            passo > 18 || simbolos.length > 30
+          );
+
+          simbolos.splice(pos, 1, ...quebrarProducao(producao));
+        }
+      }
+
+      alert("Nao foi possivel gerar uma sentenca finita com esta gramatica.");
+    }
+
+    function reiniciarSaidas() {
+      ["secFF", "secTabela", "secAnalise"].forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+      });
+      document.getElementById("firstContent").innerHTML = "";
+      document.getElementById("followContent").innerHTML = "";
+      document.getElementById("tabelaContent").innerHTML = "";
+      document.getElementById("resultado").innerHTML = "";
+    }
+
+    function reiniciarCiclo() {
+      reiniciarSaidas();
+      document.getElementById("sentenca").focus();
+    }
+
+    function gerarGramaticaAleatoria() {
+      const indice = Math.floor(Math.random() * gramaticasAleatorias.length);
+      const escolha = gramaticasAleatorias[indice];
+
+      document.getElementById("simboloInicial").value = escolha.inicial;
+      document.getElementById("gramatica").value = escolha.gramatica;
+      document.getElementById("sentenca").value = escolha.sentenca;
+
+      reiniciarSaidas();
+    }
 
 
 
 
 
     async function processar() {
-const producoes = {};
+      const producoes = {};
 
-const textoGramatica =
-    document.getElementById("gramatica").value;
+      const textoGramatica =
+        document.getElementById("gramatica").value;
 
-const linhas = textoGramatica
-    .split("\n")
-    .map(l => l.trim())
-    .filter(l => l.length > 0);
+      const linhas = textoGramatica
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
 
-for (const linha of linhas) {
+      for (const linha of linhas) {
 
-    const partes = linha.split("->");
+        const partes = linha.split("->");
 
-    if (partes.length !== 2) {
-        alert("Linha inválida: " + linha);
-        return;
-    }
+        if (partes.length !== 2) {
+          alert("Linha inválida: " + linha);
+          return;
+        }
 
-    const naoTerminal = partes[0].trim();
+        const naoTerminal = partes[0].trim();
 
-    const alternativas = partes[1]
-        .split("|")
-        .map(p => p.trim())
-        .filter(p => p.length > 0);
+        const alternativas = partes[1]
+          .split("|")
+          .map(p => p.trim().replace(/\s+/g, ""))
+          .filter(p => p.length > 0);
 
-    producoes[naoTerminal] = alternativas;
-}
+        producoes[naoTerminal] = alternativas;
+      }
       const simboloInicial = document.getElementById("simboloInicial").value.trim();
-      const sentenca       = document.getElementById("sentenca").value.trim();
+      const sentenca = document.getElementById("sentenca").value.trim();
 
       if (!simboloInicial || Object.keys(producoes).length === 0) {
         alert("Preencha o símbolo inicial e pelo menos uma produção!");
@@ -357,7 +703,7 @@ for (const linha of linhas) {
       }
 
       try {
-        const response = await fetch("http://localhost:8080/api/processar", {
+        const response = await fetch("/api/processar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ simboloInicial, producoes, sentenca })
@@ -384,7 +730,7 @@ for (const linha of linhas) {
       let followHtml = "";
 
       nts.forEach(nt => {
-        firstHtml  += `<div class="ff-row">
+        firstHtml += `<div class="ff-row">
                          <span class="ff-nt">${nt}</span>
                          <span class="ff-set">{ ${first[nt].join(", ")} }</span>
                        </div>`;
@@ -394,7 +740,7 @@ for (const linha of linhas) {
                        </div>`;
       });
 
-      document.getElementById("firstContent").innerHTML  = firstHtml;
+      document.getElementById("firstContent").innerHTML = firstHtml;
       document.getElementById("followContent").innerHTML = followHtml;
       document.getElementById("secFF").classList.remove("hidden");
     }
@@ -437,6 +783,9 @@ for (const linha of linhas) {
       let html = '<div class="status-row">';
       html += badge;
       html += `<span class="passos">${passos.length} passos</span>`;
+      html += status === "aceito"
+        ? '<span class="result-message">Sentenca reconhecida com sucesso.</span>'
+        : '<span class="result-message">Sentenca rejeitada pela tabela de parsing.</span>';
       html += '</div>';
       html += '<div class="log"><table>';
       html += '<thead><tr><th>Pilha</th><th>Entrada</th><th>Ação</th></tr></thead><tbody>';
@@ -455,12 +804,13 @@ for (const linha of linhas) {
     }
 
     // Enter na sentença dispara o processar
-    document.getElementById("sentenca").addEventListener("keypress", function(e) {
+    document.getElementById("sentenca").addEventListener("keypress", function (e) {
       if (e.key === "Enter") processar();
     });
 
-    
+
   </script>
 
 </body>
+
 </html>

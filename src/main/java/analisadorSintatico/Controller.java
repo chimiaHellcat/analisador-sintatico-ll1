@@ -42,7 +42,7 @@ public class Controller {
             TabelaDinamica td,
             Gramatica g) {
 
-        String[] tokens = sentenca.trim().split("\\s+");
+        String[] tokens = tokenizarSentenca(sentenca, g);
         String[] entrada = Arrays.copyOf(tokens, tokens.length + 1);
         entrada[tokens.length] = "$";
 
@@ -97,5 +97,18 @@ public class Controller {
             if (contador > 500) break;
         }
         return passos;
+    }
+
+    private String[] tokenizarSentenca(String sentenca, Gramatica g) {
+        if (sentenca == null || sentenca.trim().isEmpty()) {
+            return new String[0];
+        }
+
+        String texto = sentenca.trim();
+        if (texto.matches(".*\\s+.*")) {
+            return texto.split("\\s+");
+        }
+
+        return g.quebrar(texto).toArray(new String[0]);
     }
 }
